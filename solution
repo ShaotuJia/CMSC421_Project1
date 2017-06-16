@@ -83,10 +83,6 @@ def reconstruct_path(current_cell):
     # output json array file
     print(json.dumps(path))
 
-    # write output path to a txt file
-    with open('output_path.txt','w') as outfile:
-        json.dump(path,outfile)
-
 
 # This function is to find the Cell which has lowest f score in openSet
 def lowest_score(test_set: list):
@@ -142,10 +138,6 @@ def find_path(start: Cell, goal: Cell):
                 openSet.append(neighbor)
 
             neighbor.f = neighbor.g + heuristic(neighbor, goal)
-
-    # write output path to a txt file
-    with open('output_path.txt','w') as outfile:
-        json.dump('null',outfile)
 
     print(json.dumps("null"))
 
