@@ -6,7 +6,7 @@
 import json
 import sys
 
-'''''''''
+
 # get arguments from command line
 if len(sys.argv) != 6:
     print("!!input error!! Please input: map.txt initial_row initial_col goal_row goal_col")
@@ -17,49 +17,10 @@ else:
     initial_col = int(sys.argv[3])
     goal_row = int(sys.argv[4])
     goal_col = int(sys.argv[5])
-'''
-
-# TEST
-initial_row = 1
-initial_col = 1
-#goal_row = 1
-#goal_col = 10
-
-# simple-map
-#goal_row = 3
-#goal_col = 4
-
-#goal_row = 1
-#goal_col = 100
-
-# straight line
-#goal_row = 48
-#goal_col = 58
-
-# tricky map
-#goal_row = 48
-#goal_col = 48
-
-# easy
-#goal_row = 1
-#goal_col = 1
-
-# unreachable
-#initial_row = 0
-#initial_col = 0
-#goal_row = 48
-#goal_col = 58
-
-
-# large map
-goal_row = 498
-goal_col = 748
 
 
 # open map file and read contents to lines
-#text_file = open(map_file)
-
-text_file = open('large.txt')    # temporal input
+text_file = open(map_file)
 lines = text_file.readlines()
 text_file.close()
 
@@ -145,7 +106,7 @@ def reconstruct_path(current_cell):
     # Print direction
     print(json.dumps(direction))
 
-    # output json array file
+    # output json array file; May be useful in the future
     #print(json.dumps(path))
 
     # write output path to a txt file
@@ -186,14 +147,13 @@ def cell_in_set(set:list, cell:Cell):
     return False
 
 
+# Find the heuristic between the current cell to goal
 def heuristic(current_cell: Cell, goal_cell: Cell):
-    """
 
-    :type current_cell: object
-    """
     return abs(current_cell.x - goal_cell.x) + abs(current_cell.x - goal_cell.y)
 
 
+# Find the path minimal cost path between start and goal
 def find_path(start: Cell, goal: Cell):
     # check whether the start and goal are in same location
     if start.x == goal.x and start.y == goal.y:
@@ -203,7 +163,7 @@ def find_path(start: Cell, goal: Cell):
 
     # check whether the start and goal are possible
     if start.cost == float('inf') or goal.cost == float('inf'):
-        print("invalid start or goal")
+        print("start or goal is in 'Water' !!")
         print(json.dumps("null"))
         sys.exit()
 
@@ -228,17 +188,17 @@ def find_path(start: Cell, goal: Cell):
         neighbor_list = get_neighbors(current)  # find neighbors of current cell
 
         for neighbor in neighbor_list:
-           # for passed in closeSet:
-            #    if neighbor.x == passed.x and neighbor.y == passed.y:
-             #       continue
 
+            # Check whether the neighbor already exist in the closeSet
             if cell_in_set(closeSet, neighbor):
                 continue
-            #if neighbor not in openSet:
+
+            # Check whether the neighbor aleady exist in the openSet
             if not cell_in_set(openSet, neighbor):
                 openSet.append(neighbor)
 
-            neighbor.f = neighbor.g + heuristic(neighbor, goal)
+            neighbor.h = heuristic(neighbor, goal)
+            neighbor.f = neighbor.g + neighbor.h
 
     if len(openSet) == 0:
         print("This goal is unreachable")
