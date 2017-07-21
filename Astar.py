@@ -6,6 +6,7 @@
 import json
 import sys
 
+'''''''''
 # get arguments from command line
 if len(sys.argv) != 6:
     print("!!input error!! Please input: map.txt initial_row initial_col goal_row goal_col")
@@ -16,9 +17,49 @@ else:
     initial_col = int(sys.argv[3])
     goal_row = int(sys.argv[4])
     goal_col = int(sys.argv[5])
+'''
+
+# TEST
+initial_row = 1
+initial_col = 1
+#goal_row = 1
+#goal_col = 10
+
+# simple-map
+#goal_row = 3
+#goal_col = 4
+
+#goal_row = 1
+#goal_col = 100
+
+# straight line
+#goal_row = 48
+#goal_col = 58
+
+# tricky map
+#goal_row = 48
+#goal_col = 48
+
+# easy
+#goal_row = 1
+#goal_col = 1
+
+# unreachable
+#initial_row = 0
+#initial_col = 0
+#goal_row = 48
+#goal_col = 58
+
+
+# large map
+goal_row = 498
+goal_col = 748
+
 
 # open map file and read contents to lines
-text_file = open(map_file)
+#text_file = open(map_file)
+
+text_file = open('large.txt')    # temporal input
 lines = text_file.readlines()
 text_file.close()
 
@@ -31,9 +72,9 @@ rows = len(lines) - 1  # rows are 5 in simple map file
 # Initialize new cell
 class Cell:
     def __init__(self, x, y):
+        self.parent = None  # the parent cell of current cell
         self.x = x  # x coordinate of cell
         self.y = y  # y coordinate of cell
-        self.parent = None  # the parent cell of current cell
         self.g = 0  # the path move cost
         self.h = 0  # heuristic
         self.f = self.g + self.h  # f = g + f
@@ -55,18 +96,37 @@ class Cell:
 # Define a function to find neighbors of cell
 def get_neighbors(cell: Cell) -> list:
     neighbors = []
-    if cell.x != rows:
+    if cell.x != rows and Cell(cell.x +1, cell.y).cost != float('inf'):
         neighbors.append(Cell(cell.x + 1, cell.y))
-    if cell.x != 0:
+
+    if cell.x != 0 and Cell(cell.x - 1, cell.y).cost != float('inf'):
         neighbors.append(Cell(cell.x - 1, cell.y))
-    if cell.y != 0:
+
+    if cell.y != 0 and Cell(cell.x, cell.y - 1).cost != float('inf'):
         neighbors.append(Cell(cell.x, cell.y - 1))
-    if cell.y != columns:
+
+    if cell.y != columns and Cell(cell.x, cell.y + 1).cost != float('inf'):
         neighbors.append(Cell(cell.x, cell.y + 1))
+
     for n in neighbors:
         n.parent = cell
         n.g = n.cost + cell.g
     return neighbors
+
+
+# output the direction of path
+def direct_output(path: list):
+    direction = []
+    for i in range(0, len(path)-1):
+        if path[i][0] < path[i+1][0]:
+            direction.append("d")
+        if path[i][0] > path[i+1][0]:
+            direction.append('u')
+        if path[i][1] > path[i+1][1]:
+            direction.append("l")
+        if path[i][1] < path[i+1][1]:
+            direction.append("r")
+    return direction
 
 
 # reconstruct path
@@ -80,12 +140,17 @@ def reconstruct_path(current_cell):
 
     # reverse path list
     path.reverse()
+    direction = direct_output(path)
+
+    # Print direction
+    print(json.dumps(direction))
+
     # output json array file
-    print(json.dumps(path))
+    #print(json.dumps(path))
 
     # write output path to a txt file
     with open('output_path.txt','w') as outfile:
-        json.dump(path,outfile)
+        json.dump(direction,outfile)
 
 
 # This function is to find the Cell which has lowest f score in openSet
@@ -101,6 +166,26 @@ def lowest_score(test_set: list):
         return False
 
 
+# This function is to remove cells from openSet
+def cell_remove(set:list, cell:Cell):
+    if len(set) == 0:
+        set = []
+    for node in set:
+        if node.x == cell.x and node.y == cell.y:
+            set.remove(node)
+    return set
+
+
+# This function is to check whether cell is in Set
+def cell_in_set(set:list, cell:Cell):
+    if len(set) == 0:
+        return False
+    for node in set:
+        if node.x == cell.x and node.y == cell.y:
+            return True
+    return False
+
+
 def heuristic(current_cell: Cell, goal_cell: Cell):
     """
 
@@ -110,10 +195,16 @@ def heuristic(current_cell: Cell, goal_cell: Cell):
 
 
 def find_path(start: Cell, goal: Cell):
+    # check whether the start and goal are in same location
+    if start.x == goal.x and start.y == goal.y:
+        print("goal is same to start point; No path")
+        print(json.dumps("null"))
+        sys.exit()
+
     # check whether the start and goal are possible
     if start.cost == float('inf') or goal.cost == float('inf'):
-        print(json.dumps("null"))
         print("invalid start or goal")
+        print(json.dumps("null"))
         sys.exit()
 
     # Initialize openSet and closeSet
@@ -129,25 +220,33 @@ def find_path(start: Cell, goal: Cell):
         if current.x == goal.x and current.y == goal.y:
             reconstruct_path(current)
             return 0
-        openSet.remove(current)
+
+       # openSet.remove(current)
+        openSet = cell_remove(openSet, current)
         closeSet.append(current)
 
         neighbor_list = get_neighbors(current)  # find neighbors of current cell
 
         for neighbor in neighbor_list:
-            for passed in closeSet:
-                if neighbor.x == passed.x and neighbor.y == passed.y:
-                    continue
-            if neighbor not in openSet:
+           # for passed in closeSet:
+            #    if neighbor.x == passed.x and neighbor.y == passed.y:
+             #       continue
+
+            if cell_in_set(closeSet, neighbor):
+                continue
+            #if neighbor not in openSet:
+            if not cell_in_set(openSet, neighbor):
                 openSet.append(neighbor)
 
             neighbor.f = neighbor.g + heuristic(neighbor, goal)
 
+    if len(openSet) == 0:
+        print("This goal is unreachable")
+        print(json.dumps("null"))
+
     # write output path to a txt file
     with open('output_path.txt','w') as outfile:
         json.dump('null',outfile)
-
-    print(json.dumps("null"))
 
 
 # Initialize start, goal, and current cell
