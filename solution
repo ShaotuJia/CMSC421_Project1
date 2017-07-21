@@ -54,6 +54,15 @@ class Cell:
             self.cost = float('inf')
 
 
+# This function is to parent node to smallest f value node and update the openSet
+def update_set(current: Cell, neighbor: Cell, set: list):
+    for n in set:
+        if n.x == neighbor.x and n.y == neighbor.y:
+            if n.parent.f > current.f:
+                n.parent = current
+    return set
+
+
 # Define a function to find neighbors of cell
 def get_neighbors(cell: Cell) -> list:
     neighbors = []
@@ -71,6 +80,7 @@ def get_neighbors(cell: Cell) -> list:
 
     for n in neighbors:
         n.parent = cell
+        #n = parent_cell(cell, n)
         n.g = n.cost + cell.g
     return neighbors
 
@@ -91,7 +101,7 @@ def direct_output(path: list):
 
 
 # reconstruct path
-def reconstruct_path(current_cell):
+def reconstruct_path(current_cell: Cell):
     print("find path")
     path = []
     while current_cell is not None:
@@ -150,7 +160,7 @@ def cell_in_set(set:list, cell:Cell):
 # Find the heuristic between the current cell to goal using Manhattan Distance
 def heuristic(current_cell: Cell, goal_cell: Cell):
 
-    return abs(current_cell.x - goal_cell.x) + abs(current_cell.x - goal_cell.y)
+    return abs(current_cell.x - goal_cell.x) + abs(current_cell.y - goal_cell.y)
 
 
 # Find the path minimal cost path between start and goal
@@ -196,6 +206,8 @@ def find_path(start: Cell, goal: Cell):
             # Check whether the neighbor already exist in the openSet
             if not cell_in_set(openSet, neighbor):
                 openSet.append(neighbor)
+            else:
+                openSet = update_set(current, neighbor, openSet)  #update openSet
 
             neighbor.h = heuristic(neighbor, goal)
             neighbor.f = neighbor.g + neighbor.h
@@ -214,3 +226,4 @@ start = Cell(initial_row, initial_col)
 goal = Cell(goal_row, goal_col)
 
 find_path(start, goal)
+
